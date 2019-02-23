@@ -1,0 +1,16 @@
+{
+    "name": "liviu/hbp-import",
+    "description": "import script for data",
+    "type": "project",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Liviu Gelea",
+            "email": "liviu.gelea@gmail.com"
+        }
+    ],
+    "minimum-stability": "stable",
+    "require": {
+        "leaveyou/console": "^1.0"
+    }
+}

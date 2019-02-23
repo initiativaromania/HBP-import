@@ -1,0 +1,51 @@
+{
+    "_readme": [
+        "This file locks the dependencies of your project to a known state",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
+        "This file is @generated automatically"
+    ],
+    "content-hash": "9acaf8160372200b83b8d530a4fd1f51",
+    "packages": [
+        {
+            "name": "leaveyou/console",
+            "version": "1.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/Leaveyou/console.git",
+                "reference": "04d5793c7aa935cb5a6d6dc6c2f1127a5a59113a"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/Leaveyou/console/zipball/04d5793c7aa935cb5a6d6dc6c2f1127a5a59113a",
+                "reference": "04d5793c7aa935cb5a6d6dc6c2f1127a5a59113a",
+                "shasum": ""
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Leaveyou\\Console\\": "./src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Liviu Gelea",
+                    "email": "liviu.gelea@gmail.com"
+                }
+            ],
+            "description": "A set of console related components without the overhead of the illuminate framework",
+            "time": "2017-04-04T08:11:15+00:00"
+        }
+    ],
+    "packages-dev": [],
+    "aliases": [],
+    "minimum-stability": "stable",
+    "stability-flags": [],
+    "prefer-stable": false,
+    "prefer-lowest": false,
+    "platform": [],
+    "platform-dev": []
+}
