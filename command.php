@@ -2,41 +2,31 @@
 
 declare(strict_types=1);
 
-use Leaveyou\Console\Input;
-use Leaveyou\Console\Parameter;
-use Leaveyou\Console\ParameterSet;
-use Leaveyou\Console\Tools\CommandLineParser;
-use Leaveyou\Console\Tools\Help;
-use Leaveyou\Console\Tools\ResultNormalizer;
+use Hbp\Import\Application;
+use Hbp\Import\StrategyCollection;
 
-define('ROOD_DIR', __DIR__);
+define('ROOT_DIR', __DIR__);
 
-require_once "vendor/autoload.php";
+if (!is_file(ROOT_DIR . "/vendor/autoload.php")) {
+    die("Run composer install first");
+}
 
-$parameters = new ParameterSet();
-$resultNormalizer = new ResultNormalizer();
-$parser = new CommandLineParser($resultNormalizer);
-$help = new Help();
-$input = new Input($parameters, $parser, $help);
+require_once ROOT_DIR . "/vendor/autoload.php";
 
+$input = require_once ROOT_DIR . "/bootstrap/input.php";
 
+$strategies = new StrategyCollection();
 
-
-
-$fileNameParameter = new Parameter('file');
-$fileNameParameter->setShortName("f");
-$fileNameParameter->setDescription("The file name for the csv file containing the data");
-$fileNameParameter->setValueType(Parameter::VALUE_STRING);
-$fileNameParameter->setType(Parameter::TYPE_MANDATORY);
-
-$parameters->addParameter($fileNameParameter);
-
-
+$application = new Application($strategies);
 
 
 $fileName = $input->getValue('file');
+$fileName = $input->getValue('strategy');
 
 
-var_dump($fileName);
-
-
+try {
+    $application->run();
+} catch (Throwable $e) {
+    echo $e->getMessage();
+    die("\n");
+}

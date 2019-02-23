@@ -1,6 +1,6 @@
 {
     "name": "liviu/hbp-import",
-    "description": "import script for data",
+    "description": "import script for data.gov.ro",
     "type": "project",
     "license": "MIT",
     "authors": [
@@ -12,5 +12,11 @@
     "minimum-stability": "stable",
     "require": {
         "leaveyou/console": "^1.0"
+    },
+    "require-dev": {},
+    "autoload": {
+        "psr-4": {
+            "Hbp\\Import\\": "./src"
+        }
     }
 }
