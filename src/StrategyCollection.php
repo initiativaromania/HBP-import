@@ -2,7 +2,7 @@
 
 namespace Hbp\Import;
 
-use LogicException;
+use InvalidArgumentException;
 
 class StrategyCollection implements \IteratorAggregate
 {
@@ -10,13 +10,6 @@ class StrategyCollection implements \IteratorAggregate
      * @var ImportStrategy[]
      */
     private $strategies;
-
-    /**
-     * StrategyCollection constructor.
-     */
-    public function __construct()
-    {
-    }
 
     /**
      * @return ImportStrategy[]
@@ -32,9 +25,28 @@ class StrategyCollection implements \IteratorAggregate
      */
     public function add(ImportStrategy $strategy, $alias)
     {
-
         if (!is_string($alias) || !strlen($alias)) {
-            throw new LogicException("Incorrect alias specified for class \"" . get_class($strategy) . "\"");
+            throw new ImplementationException("Incorrect alias specified for class \"" . get_class($strategy) . "\"");
         }
+
+        if (isset($this->strategies[$alias])) {
+            throw new ImplementationException("Strategy \"$alias\" was already defined for class \"" . get_class($strategy) . "\"");
+        }
+
+        $this->strategies[$alias] = $strategy;
+    }
+
+    /**
+     * @param $alias
+     * @return ImportStrategy
+     */
+    public function getStrategy($alias)
+    {
+        if (!isset($this->strategies[$alias])) {
+            $definedStrategies = implode(", ", array_keys($this->strategies));
+            throw new InvalidArgumentException("Undefined strategy \"$alias\". Currently defined are: [" . $definedStrategies . "]");
+        }
+
+        return $this->strategies[$alias];
     }
 }
