@@ -23,7 +23,6 @@ class Application
         $this->input = $input;
     }
 
-
     public function run()
     {
         $fileName = $this->input->getValue('file');
@@ -31,6 +30,9 @@ class Application
         $verbosity = $this->input->getValue('verbose');
 
         $strategy = $this->strategies->getStrategy($strategyName);
+
+        $strategy->openFile($fileName);
+
 
     }
 }

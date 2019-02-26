@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "9acaf8160372200b83b8d530a4fd1f51",
+    "content-hash": "c63c92164905aeab7cc82b3b744f7554",
     "packages": [
         {
             "name": "leaveyou/console",

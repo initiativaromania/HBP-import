@@ -11,11 +11,9 @@ use Hbp\Import\StrategyCollection;
 define('START_TIME', microtime(true));
 define('ROOT_DIR', __DIR__);
 
-if (!is_file(ROOT_DIR . "/vendor/autoload.php")) {
-    die("Run composer install first");
+if (!@include ROOT_DIR . "/vendor/autoload.php") {
+    die("\e[93mRun composer install first\e[0m" . PHP_EOL);
 }
-
-require_once ROOT_DIR . "/vendor/autoload.php";
 
 $input = require_once ROOT_DIR . "/bootstrap/input.php";
 $verbosity = $input->getValue('verbose');
@@ -24,6 +22,10 @@ $verbosity = $input->getValue('verbose');
 set_exception_handler(function ($exception) use ($verbosity) {
     ExceptionHandler::handle($exception, $verbosity);
 });
+
+set_error_handler(function ($errorLevel, $errorString, $errorFile, $errorLine) {
+    throw new \Hbp\Import\PhpError("[$errorLevel] $errorString in $errorFile on line $errorLine");
+}, E_ALL);
 
 register_shutdown_function(function () use ($verbosity) {
     PerformanceLog::run(START_TIME, $verbosity);
