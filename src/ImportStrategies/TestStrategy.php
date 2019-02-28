@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hbp\Import\ImportStrategies;
 
+use Generator;
 use Hbp\Import\ImportStrategy;
 use Hbp\Import\IncorrectStrategyException;
 use SplFileObject;
@@ -42,6 +43,45 @@ class TestStrategy implements ImportStrategy
         $this->skipNextRow($file);
 
         $this->columns = $this->parseColumnNames($file);
+
+        echo implode("\n", $this->columns) . "\n";
+
+
+        $expectedTitles = [
+            "CASTIGATOR",
+            "CASTIGATOR_CUI",
+            "CASTIGATOR_TARA",
+            "CASTIGATOR_LOCALITATE",
+            "CASTIGATOR_ADRESA",
+            "TIP_PROCEDURA",
+            "AUTORITATE_CONTRACTANTA",
+            "AUTORITATE_CONTRACTANTA_CUI",
+            "NUMAR_ANUNT",
+            "DATA_ANUNT",
+            "DESCRIERE",
+            "TIP_INCHEIERE_CONTRACT",
+            "NUMAR_CONTRACT",
+            "DATA_CONTRACT",
+            "TITLU_CONTRACT",
+            "VALOARE",
+            "MONEDA",
+            "VALOARE_RON",
+            "VALOARE_EUR",
+            "CPV_CODE_ID",
+            "CPV_CODE"
+        ];
+
+        if ($expectedTitles !== $this->columns) {
+            throw new IncorrectStrategyException("Strategy expects different column names");
+        }
+
+        $rows = $this->getRowIterator($file);
+
+        foreach ($rows as $index => $row) {
+              echo $row;
+            echo PHP_EOL;
+        }
+
     }
 
     /**
@@ -95,5 +135,16 @@ class TestStrategy implements ImportStrategy
 
         preg_match_all("#<t>([^<>]+)</t>#", $tableHeaderRow, $matches);
         return $matches[1];
+    }
+
+    /**
+     * @param SplFileObject $file
+     * @return Generator|string[]
+     */
+    public function getRowIterator(SplFileObject $file): Generator
+    {
+        while (!$file->eof()) {
+            yield $file->fgets();
+        }
     }
 }

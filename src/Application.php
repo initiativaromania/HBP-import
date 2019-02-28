@@ -28,11 +28,7 @@ class Application
         $fileName = $this->input->getValue('file');
         $strategyName = $this->input->getValue('strategy');
         $verbosity = $this->input->getValue('verbose');
-
         $strategy = $this->strategies->getStrategy($strategyName);
-
         $strategy->openFile($fileName);
-
-
     }
 }
