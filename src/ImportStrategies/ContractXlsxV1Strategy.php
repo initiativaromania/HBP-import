@@ -17,7 +17,7 @@ use Hbp\Import\ImportStrategy;
 use Hbp\Import\IncorrectStrategyException;
 use SplFileObject;
 
-class TestStrategy implements ImportStrategy
+class ContractXlsxV1Strategy implements ImportStrategy
 {
     static $notFound = 0;
     static $found = 0;
@@ -84,61 +84,25 @@ class TestStrategy implements ImportStrategy
             throw new IncorrectStrategyException("Input file not a xlsx file");
         }
         $file = $this->getFileObject($fileName);
-        $rows = $this->getBatchIterator($file, 100);
-        foreach ($rows as $batchIndex => $batch) {
 
-            if ($batchIndex > 10 ) break;
+        $contractIterator = $this->getContractIterator($file);
 
-            $batch = $this->data_cleanup($batch);
+        $savingBatch = 10;
 
-            $institutions = $this->createInstitutionLookupCache($batch);
-            $companies = $this->createCompanyLookupCache($batch);
-
-
-            foreach ($batch as $rowIndex => $row)
-            {
-                try {
-                    if (!isset($institutions[$row['AUTORITATE_CONTRACTANTA_CUI']])) {
-                        throw new InstitutionNotFoundException("Institutia nu a fost gasita: cui=" . $row['AUTORITATE_CONTRACTANTA_CUI']);
-                    }
-                    if (!isset($companies[$row['CASTIGATOR_CUI']])) {
-                        throw new CompanyNotFoundException("Compania nu a fost gasita: cui=" . $row['CASTIGATOR_CUI']);
-                    }
-                    $institution = $institutions[$row['AUTORITATE_CONTRACTANTA_CUI']];
-                    $company = $companies[$row['CASTIGATOR_CUI']];
-
-                    static::$found++;
-
-                    $contract = new Contract();
-                    $contract->setProcedure(strtolower($row['TIP_PROCEDURA']));
-                    $contract->setApplicationNo($row['NUMAR_ANUNT']);
-                    $contract->setApplicationDate(DateTimeImmutable::createFromFormat("d-m-Y H:i:s", $row['DATA_ANUNT']));
-                    $contract->setClosingType(strtolower($row['TIP_INCHEIERE_CONTRACT']));
-                    $contract->setContractNo($row['NUMAR_CONTRACT']);
-                    $contract->setContractDate(DateTimeImmutable::createFromFormat("d-m-Y H:i:s", $row['DATA_CONTRACT']));
-                    $contract->setTitle($row['TITLU_CONTRACT']);
-                    $contract->setPrice((float)$row['VALOARE']);
-                    $contract->setCurrency($row['MONEDA']);
-                    $contract->setPriceEur((float)$row['VALOARE_EUR']);
-                    $contract->setPriceRon((float)$row['VALOARE_RON']);
-                    $contract->setDescription($row['DESCRIERE']);
-
-                    $contract->setCpvcode($row['CPV_CODE']);
-
-                    $contract->setInstitution($institution->getId());
-                    $contract->setCompany($company->getId());
-
-                    echo "Processed row \n";
-
-                } catch (NotFoundException $exception) {
-                    echo "Cound not process one row: " . $exception->getMessage() . "\n";
-                 //   echo "tried to process " . print_r($row, true) . "\n\n";
-
-                    static::$notFound++;
-                }
-
-
+        $unsavedContracts = [];
+        $index = 0;
+        foreach ($contractIterator as $company)
+        {
+            $unsavedContracts[] = $company;
+            $index++;
+            if ($index == $savingBatch) {
+                $this->saveContracts($unsavedContracts);
+                $unsavedContracts = [];
+                $index = 0;
             }
+        }
+        if (!empty($unsavedContracts)) {
+            $this->saveContracts($unsavedContracts);
         }
     }
 
@@ -199,7 +163,7 @@ class TestStrategy implements ImportStrategy
      * @return Generator|string[]
      * @throws IncorrectStrategyException
      */
-    public function getBatchIterator(SplFileObject $file, $batchSize = 1): Generator
+    public function getBatchIterator(SplFileObject $file, $batchSize = 1000): Generator
     {
         $this->encoding = $this->parseEncoding($file);
         $this->skipNextRow($file);
@@ -238,6 +202,14 @@ class TestStrategy implements ImportStrategy
     {
         $return = [];
         foreach ($batch as $row) {
+            $row['AUTORITATE_CONTRACTANTA'] = html_entity_decode($row['AUTORITATE_CONTRACTANTA']);
+            $row['AUTORITATE_CONTRACTANTA'] = Cleanup::deleteMultipleSpaces($row['AUTORITATE_CONTRACTANTA']);
+            $row['AUTORITATE_CONTRACTANTA'] = Cleanup::replaceWeirdCharacters($row['AUTORITATE_CONTRACTANTA']);
+
+            $row['CASTIGATOR'] = html_entity_decode($row['CASTIGATOR']);
+            $row['CASTIGATOR'] = Cleanup::deleteMultipleSpaces($row['CASTIGATOR']);
+            $row['CASTIGATOR'] = Cleanup::replaceWeirdCharacters($row['CASTIGATOR']);
+
             try {
                 $row['AUTORITATE_CONTRACTANTA_CUI'] = $this->extractCui($row['AUTORITATE_CONTRACTANTA_CUI']);
                 $row['CASTIGATOR_CUI'] = $this->extractCui($row['CASTIGATOR_CUI']);
@@ -277,6 +249,90 @@ class TestStrategy implements ImportStrategy
         echo "Incorrect cui format for record: \n";
         dp($row);
         echo  "\nWill be ignored";
+    }
+
+    /**
+     * @param $row
+     * @param $institution
+     * @param $company
+     * @return Contract
+     */
+    private function createContract($row, $institution, $company): Contract
+    {
+        $contract = new Contract();
+        $contract->setProcedure(strtolower($row['TIP_PROCEDURA']));
+        $contract->setApplicationNo($row['NUMAR_ANUNT']);
+        $contract->setApplicationDate(DateTimeImmutable::createFromFormat("d-m-Y H:i:s", $row['DATA_ANUNT']));
+        $contract->setClosingType(strtolower($row['TIP_INCHEIERE_CONTRACT']));
+        $contract->setContractNo($row['NUMAR_CONTRACT']);
+        $contract->setContractDate(DateTimeImmutable::createFromFormat("d-m-Y H:i:s", $row['DATA_CONTRACT']));
+        $contract->setTitle($row['TITLU_CONTRACT']);
+        $contract->setPrice((float)$row['VALOARE']);
+        $contract->setCurrency($row['MONEDA']);
+        $contract->setPriceEur((float)$row['VALOARE_EUR']);
+        $contract->setPriceRon((float)$row['VALOARE_RON']);
+        $contract->setDescription($row['DESCRIERE']);
+
+        $contract->setCpvcode($row['CPV_CODE']);
+
+        $contract->setInstitution($institution->getId());
+        $contract->setCompany($company->getId());
+
+        return $contract;
+    }
+
+    /**
+     * @param SplFileObject $file
+     * @return Generator
+     * @throws IncorrectStrategyException
+     */
+    private function getContractIterator(SplFileObject $file)
+    {
+        $rows = $this->getBatchIterator($file, 5000);
+
+        foreach ($rows as $batchIndex => $batch) {
+
+            $batch = $this->data_cleanup($batch);
+
+            $institutions = $this->createInstitutionLookupCache($batch);
+            $companies = $this->createCompanyLookupCache($batch);
+
+            // todo: create missing institutions
+            // todo: create missing companies
+
+            foreach ($batch as $rowIndex => $row)
+            {
+                try {
+                    if (!isset($institutions[$row['AUTORITATE_CONTRACTANTA_CUI']])) {
+                        throw new InstitutionNotFoundException("Institutia nu a fost gasita: cui=" . $row['AUTORITATE_CONTRACTANTA_CUI'] . " - " . $row['AUTORITATE_CONTRACTANTA']);
+                    }
+                    if (!isset($companies[$row['CASTIGATOR_CUI']])) {
+                        throw new CompanyNotFoundException("Compania nu a fost gasita: cui=" . $row['CASTIGATOR_CUI'] . " - " . $row['CASTIGATOR']);
+                    }
+                    $institution = $institutions[$row['AUTORITATE_CONTRACTANTA_CUI']];
+                    $company = $companies[$row['CASTIGATOR_CUI']];
+
+                    static::$found++;
+
+                    yield $this->createContract($row, $institution, $company);
+
+                } catch (NotFoundException $exception) {
+                    echo "Cound not process one row: " . $exception->getMessage() . "\n";
+                    static::$notFound++;
+                }
+
+
+            }
+        }
+    }
+
+
+    /**
+     * @param Contract[] $unsavedContracts
+     */
+    private function saveContracts(array $unsavedContracts)
+    {
+        // todo: create batch save function
     }
 
 

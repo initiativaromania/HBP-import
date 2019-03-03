@@ -9,7 +9,7 @@ use Hbp\Import\Database\Repository\ContractRepository;
 use Hbp\Import\Database\Repository\InstitutionRepository;
 use Hbp\Import\Database\Repository\TenderRepository;
 use Hbp\Import\ExceptionHandler;
-use Hbp\Import\ImportStrategies\TestStrategy;
+use Hbp\Import\ImportStrategies\ContractXlsxV1Strategy;
 use Hbp\Import\PerformanceLog;
 use Hbp\Import\StrategyCollection;
 
@@ -49,8 +49,8 @@ $database->registerRepository('institution', new InstitutionRepository($pdo));
 $database->registerRepository('tender', new TenderRepository($pdo));
 
 $strategies = new StrategyCollection();
-$testStrategy = new TestStrategy($database);
-$strategies->add($testStrategy, 'testStrategy');
+$testStrategy = new ContractXlsxV1Strategy($database);
+$strategies->add($testStrategy, "ContractXlsxV1Strategy");
 
 $strategyName = $input->getValue('strategy');
 $strategy = $strategies->getStrategy($strategyName);
