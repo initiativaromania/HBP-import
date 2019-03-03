@@ -4,84 +4,142 @@ declare(strict_types=1);
 
 namespace Hbp\Import\ImportStrategies;
 
+use DateTimeImmutable;
 use Generator;
+use Hbp\Import\Database\Database;
+use Hbp\Import\Database\Entity\Contract;
+use Hbp\Import\Database\Repository\CompanyNotFoundException;
+use Hbp\Import\Database\Repository\CompanyRepository;
+use Hbp\Import\Database\Repository\InstitutionNotFoundException;
+use Hbp\Import\Database\Repository\InstitutionRepository;
+use Hbp\Import\Database\Repository\NotFoundException;
 use Hbp\Import\ImportStrategy;
 use Hbp\Import\IncorrectStrategyException;
 use SplFileObject;
 
 class TestStrategy implements ImportStrategy
 {
+    static $notFound = 0;
+    static $found = 0;
+
+    /** @var Database */
+    private $database;
+
     /** @var string */
     private $encoding;
 
     /** @var string[] */
-    private $columns;
+    private $columns = [
+        "CASTIGATOR",
+        "CASTIGATOR_CUI",
+        "CASTIGATOR_TARA",
+        "CASTIGATOR_LOCALITATE",
+        "CASTIGATOR_ADRESA",
+        "TIP_PROCEDURA",
+        "AUTORITATE_CONTRACTANTA",
+        "AUTORITATE_CONTRACTANTA_CUI",
+        "NUMAR_ANUNT",
+        "DATA_ANUNT",
+        "DESCRIERE",
+        "TIP_INCHEIERE_CONTRACT",
+        "NUMAR_CONTRACT",
+        "DATA_CONTRACT",
+        "TITLU_CONTRACT",
+        "VALOARE",
+        "MONEDA",
+        "VALOARE_RON",
+        "VALOARE_EUR",
+        "CPV_CODE_ID",
+        "CPV_CODE"
+    ];
+
+    /** @var InstitutionRepository */
+    private $institutionRepository;
+
+    /** @var CompanyRepository */
+    private $companyRepository;
 
     /**
      * TestStrategy constructor.
+     * @param Database $database
      */
-    public function __construct()
+    public function __construct(Database $database)
     {
-        //
+        $this->database = $database;
+        register_shutdown_function(function () {
+            echo "Found: " . self::$found . " / Not found: " . self::$notFound . "\n";
+        });
+
+        $this->institutionRepository = $this->database->getRepository('institution');
+        $this->companyRepository = $this->database->getRepository('company');
     }
 
     /**
      * @param string $fileName
      * @throws IncorrectStrategyException
      */
-    public function openFile(string $fileName)
+    public function processFile(string $fileName)
     {
         if (substr($fileName, -4) !== "xlsx") {
             throw new IncorrectStrategyException("Input file not a xlsx file");
         }
-
         $file = $this->getFileObject($fileName);
+        $rows = $this->getBatchIterator($file, 100);
+        foreach ($rows as $batchIndex => $batch) {
 
-        $this->encoding = $this->parseEncoding($file);
+            if ($batchIndex > 10 ) break;
 
-        $this->skipNextRow($file);
-        $this->skipNextRow($file);
+            $batch = $this->data_cleanup($batch);
 
-        $this->columns = $this->parseColumnNames($file);
-
-        echo implode("\n", $this->columns) . "\n";
+            $institutions = $this->createInstitutionLookupCache($batch);
+            $companies = $this->createCompanyLookupCache($batch);
 
 
-        $expectedTitles = [
-            "CASTIGATOR",
-            "CASTIGATOR_CUI",
-            "CASTIGATOR_TARA",
-            "CASTIGATOR_LOCALITATE",
-            "CASTIGATOR_ADRESA",
-            "TIP_PROCEDURA",
-            "AUTORITATE_CONTRACTANTA",
-            "AUTORITATE_CONTRACTANTA_CUI",
-            "NUMAR_ANUNT",
-            "DATA_ANUNT",
-            "DESCRIERE",
-            "TIP_INCHEIERE_CONTRACT",
-            "NUMAR_CONTRACT",
-            "DATA_CONTRACT",
-            "TITLU_CONTRACT",
-            "VALOARE",
-            "MONEDA",
-            "VALOARE_RON",
-            "VALOARE_EUR",
-            "CPV_CODE_ID",
-            "CPV_CODE"
-        ];
+            foreach ($batch as $rowIndex => $row)
+            {
+                try {
+                    if (!isset($institutions[$row['AUTORITATE_CONTRACTANTA_CUI']])) {
+                        throw new InstitutionNotFoundException("Institutia nu a fost gasita: cui=" . $row['AUTORITATE_CONTRACTANTA_CUI']);
+                    }
+                    if (!isset($companies[$row['CASTIGATOR_CUI']])) {
+                        throw new CompanyNotFoundException("Compania nu a fost gasita: cui=" . $row['CASTIGATOR_CUI']);
+                    }
+                    $institution = $institutions[$row['AUTORITATE_CONTRACTANTA_CUI']];
+                    $company = $companies[$row['CASTIGATOR_CUI']];
 
-        if ($expectedTitles !== $this->columns) {
-            throw new IncorrectStrategyException("Strategy expects different column names");
+                    static::$found++;
+
+                    $contract = new Contract();
+                    $contract->setProcedure(strtolower($row['TIP_PROCEDURA']));
+                    $contract->setApplicationNo($row['NUMAR_ANUNT']);
+                    $contract->setApplicationDate(DateTimeImmutable::createFromFormat("d-m-Y H:i:s", $row['DATA_ANUNT']));
+                    $contract->setClosingType(strtolower($row['TIP_INCHEIERE_CONTRACT']));
+                    $contract->setContractNo($row['NUMAR_CONTRACT']);
+                    $contract->setContractDate(DateTimeImmutable::createFromFormat("d-m-Y H:i:s", $row['DATA_CONTRACT']));
+                    $contract->setTitle($row['TITLU_CONTRACT']);
+                    $contract->setPrice((float)$row['VALOARE']);
+                    $contract->setCurrency($row['MONEDA']);
+                    $contract->setPriceEur((float)$row['VALOARE_EUR']);
+                    $contract->setPriceRon((float)$row['VALOARE_RON']);
+                    $contract->setDescription($row['DESCRIERE']);
+
+                    $contract->setCpvcode($row['CPV_CODE']);
+
+                    $contract->setInstitution($institution->getId());
+                    $contract->setCompany($company->getId());
+
+                    echo "Processed row \n";
+
+                } catch (NotFoundException $exception) {
+                    echo "Cound not process one row: " . $exception->getMessage() . "\n";
+                 //   echo "tried to process " . print_r($row, true) . "\n\n";
+
+                    static::$notFound++;
+                }
+
+
+            }
         }
-
-        $rows = $this->getRowIterator($file);
-
-        foreach ($rows as $index => $row) {
-              echo $row;
-            echo PHP_EOL;
-        }
-
     }
 
     /**
@@ -129,22 +187,97 @@ class TestStrategy implements ImportStrategy
      * @param SplFileObject $file
      * @return string[]
      */
-    private function parseColumnNames(SplFileObject $file)
+    private function parseRow(SplFileObject $file)
     {
-        $tableHeaderRow = $file->fgets();
-
-        preg_match_all("#<t>([^<>]+)</t>#", $tableHeaderRow, $matches);
-        return $matches[1];
+        $tableRow = $file->fgets();
+        preg_match_all("#<c(\ [a-z]+\=\"[a-z0-9]+\")*>(<[a-z0-9]+>)*([^<]*)#i", $tableRow, $matches);
+        return array_map('trim', $matches[3]);
     }
 
     /**
      * @param SplFileObject $file
      * @return Generator|string[]
+     * @throws IncorrectStrategyException
      */
-    public function getRowIterator(SplFileObject $file): Generator
+    public function getBatchIterator(SplFileObject $file, $batchSize = 1): Generator
     {
+        $this->encoding = $this->parseEncoding($file);
+        $this->skipNextRow($file);
+        $this->skipNextRow($file);
+        $foundColumns = $this->parseRow($file);
+        if ($this->columns !== $foundColumns) {
+            throw new IncorrectStrategyException("Strategy expects different column names");
+        }
+
+        $batch = [];
+
         while (!$file->eof()) {
-            yield $file->fgets();
+            $row = $this->parseRow($file);
+            if (empty($row)) {continue;}
+            $row = array_combine($this->columns, $row);
+
+            $batch[] = $row;
+            if (count($batch) == $batchSize )
+            {
+                yield $batch;
+                $batch = [];
+            }
+
+
+            if (!$file->eof()) {
+                $file->fgets();
+            }
+        }
+
+        if (!empty($batch)) {
+            yield $batch;
         }
     }
+
+    private function data_cleanup($batch)
+    {
+        $return = [];
+        foreach ($batch as $row) {
+            try {
+                $row['AUTORITATE_CONTRACTANTA_CUI'] = $this->extractCui($row['AUTORITATE_CONTRACTANTA_CUI']);
+                $row['CASTIGATOR_CUI'] = $this->extractCui($row['CASTIGATOR_CUI']);
+            } catch (NotFoundException $exception) {
+                $this->handleFuckedUpCui($row);
+            }
+            $return[] = $row;
+        }
+        return $return;
+    }
+
+    private function createInstitutionLookupCache($batch)
+    {
+        $institutions = array_column($batch, 'AUTORITATE_CONTRACTANTA_CUI');
+        return $this->institutionRepository->findByCuiBulk($institutions);
+    }
+
+
+    private function createCompanyLookupCache($batch)
+    {
+        $companies = array_column($batch, 'CASTIGATOR_CUI');
+        return $this->companyRepository->findByCuiBulk($companies);
+    }
+
+
+    private function extractCui($string)
+    {
+        preg_match("#^[^0-9]*([0-9]{1,})#", $string, $matches);
+        if (!isset($matches[1])) {
+            throw new NotFoundException("Cannot identify CUI in string: '{$string}' ");
+        }
+        return $matches[1];
+    }
+
+    private function handleFuckedUpCui($row)
+    {
+        echo "Incorrect cui format for record: \n";
+        dp($row);
+        echo  "\nWill be ignored";
+    }
+
+
 }

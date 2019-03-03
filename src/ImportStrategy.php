@@ -4,6 +4,5 @@ namespace Hbp\Import;
 
 interface ImportStrategy
 {
-
-    public function openFile(string $fileName);
+    public function processFile(string $fileName);
 }

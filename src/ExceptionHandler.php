@@ -12,6 +12,7 @@ class ExceptionHandler
     {
         echo "\e[31mError: \e[0m";
         echo $e->getMessage();
+        echo " in " . $e->getFile() . ":" .$e->getLine();
         echo PHP_EOL;
         die();
     }

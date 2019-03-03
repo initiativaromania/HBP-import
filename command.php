@@ -3,6 +3,11 @@
 declare(strict_types=1);
 
 use Hbp\Import\Application;
+use Hbp\Import\Database\Database;
+use Hbp\Import\Database\Repository\CompanyRepository;
+use Hbp\Import\Database\Repository\ContractRepository;
+use Hbp\Import\Database\Repository\InstitutionRepository;
+use Hbp\Import\Database\Repository\TenderRepository;
 use Hbp\Import\ExceptionHandler;
 use Hbp\Import\ImportStrategies\TestStrategy;
 use Hbp\Import\PerformanceLog;
@@ -14,6 +19,10 @@ define('ROOT_DIR', __DIR__);
 if (!@include ROOT_DIR . "/vendor/autoload.php") {
     die("\e[93mRun composer install first\e[0m" . PHP_EOL);
 }
+
+require_once ROOT_DIR . "/config.php";
+
+require_once ROOT_DIR . "/bootstrap/helpers.php";
 
 $input = require_once ROOT_DIR . "/bootstrap/input.php";
 $verbosity = $input->getValue('verbose');
@@ -31,10 +40,22 @@ register_shutdown_function(function () use ($verbosity) {
     PerformanceLog::run(START_TIME, $verbosity);
 });
 
-$testStrategy = new TestStrategy();
+$pdo = new PDO("pgsql:host=$host;dbname=$database", $user, $password);
+
+$database = new Database($pdo);
+$database->registerRepository('contract', new ContractRepository($pdo));
+$database->registerRepository('company', new CompanyRepository($pdo));
+$database->registerRepository('institution', new InstitutionRepository($pdo));
+$database->registerRepository('tender', new TenderRepository($pdo));
 
 $strategies = new StrategyCollection();
+$testStrategy = new TestStrategy($database);
 $strategies->add($testStrategy, 'testStrategy');
 
-$application = new Application($input, $strategies);
-$application->run();
+$strategyName = $input->getValue('strategy');
+$strategy = $strategies->getStrategy($strategyName);
+
+
+
+$application = new Application($input, $database);
+$application->run($strategy);

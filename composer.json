@@ -11,7 +11,10 @@
     ],
     "minimum-stability": "stable",
     "require": {
-        "leaveyou/console": "^1.0"
+        "leaveyou/console": "^1.0",
+      "ext-pdo": "*",
+        "doctrine/dbal": "^2.9",
+        "doctrine/orm": "^2.6"
     },
     "require-dev": {},
     "autoload": {
