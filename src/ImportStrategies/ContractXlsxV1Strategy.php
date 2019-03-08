@@ -5,11 +5,15 @@ declare(strict_types=1);
 namespace Hbp\Import\ImportStrategies;
 
 use DateTimeImmutable;
+use Exception;
 use Generator;
 use Hbp\Import\Database\Database;
+use Hbp\Import\Database\Entity\Company;
 use Hbp\Import\Database\Entity\Contract;
+use Hbp\Import\Database\Entity\Institution;
 use Hbp\Import\Database\Repository\CompanyNotFoundException;
 use Hbp\Import\Database\Repository\CompanyRepository;
+use Hbp\Import\Database\Repository\ContractRepository;
 use Hbp\Import\Database\Repository\InstitutionNotFoundException;
 use Hbp\Import\Database\Repository\InstitutionRepository;
 use Hbp\Import\Database\Repository\NotFoundException;
@@ -17,10 +21,32 @@ use Hbp\Import\ImportStrategy;
 use Hbp\Import\IncorrectStrategyException;
 use SplFileObject;
 
+/**
+ * Class ContractXlsxV1Strategy was created based on xlsx files from 2018 such as "achizitiidirecte2018t4.xlsx"
+ */
 class ContractXlsxV1Strategy implements ImportStrategy
 {
-    static $notFound = 0;
-    static $found = 0;
+    const FIELD_NUME_COMPANIE          = "CASTIGATOR";
+    const FIELD_CUI_COMPANIE           = "CASTIGATOR_CUI";
+    const FIELD_TARA_COMPANIE          = "CASTIGATOR_TARA";
+    const FIELD_LOCALITATE_COMPANIE    = "CASTIGATOR_LOCALITATE";
+    const FIELD_ADRESA_COMPANIE        = "CASTIGATOR_ADRESA";
+    const FIELD_PROCEDURA              = "TIP_PROCEDURA";
+    const FIELD_NUME_INSTITUTIE        = "AUTORITATE_CONTRACTANTA";
+    const FIELD_CUI_INSTITUTIE         = "AUTORITATE_CONTRACTANTA_CUI";
+    const FIELD_NUMAR_ANUNT            = "NUMAR_ANUNT";
+    const FIELD_DATA_ANUNT             = "DATA_ANUNT";
+    const FIELD_DESCRIERE_CONTRACT     = "DESCRIERE";
+    const FIELD_TIP_INCHEIERE_CONTRACT = "TIP_INCHEIERE_CONTRACT";
+    const FIELD_NUMAR_CONTRACT         = "NUMAR_CONTRACT";
+    const FIELD_DATA_CONTRACT          = "DATA_CONTRACT";
+    const FIELD_TITLU_CONTRACT         = "TITLU_CONTRACT";
+    const FIELD_VALOARE                = "VALOARE";
+    const FIELD_MONEDA                 = "MONEDA";
+    const FIELD_VALOARE_RON            = "VALOARE_RON";
+    const FIELD_VALOARE_EUR            = "VALOARE_EUR";
+    const FIELD_CPV_CODE_ID            = "CPV_CODE_ID";
+    const FIELD_CPV_CODE               = "CPV_CODE";
 
     /** @var Database */
     private $database;
@@ -29,28 +55,28 @@ class ContractXlsxV1Strategy implements ImportStrategy
     private $encoding;
 
     /** @var string[] */
-    private $columns = [
-        "CASTIGATOR",
-        "CASTIGATOR_CUI",
-        "CASTIGATOR_TARA",
-        "CASTIGATOR_LOCALITATE",
-        "CASTIGATOR_ADRESA",
-        "TIP_PROCEDURA",
-        "AUTORITATE_CONTRACTANTA",
-        "AUTORITATE_CONTRACTANTA_CUI",
-        "NUMAR_ANUNT",
-        "DATA_ANUNT",
-        "DESCRIERE",
-        "TIP_INCHEIERE_CONTRACT",
-        "NUMAR_CONTRACT",
-        "DATA_CONTRACT",
-        "TITLU_CONTRACT",
-        "VALOARE",
-        "MONEDA",
-        "VALOARE_RON",
-        "VALOARE_EUR",
-        "CPV_CODE_ID",
-        "CPV_CODE"
+    private $expectedColumns = [
+        self::FIELD_NUME_COMPANIE,
+        self::FIELD_CUI_COMPANIE,
+        self::FIELD_TARA_COMPANIE,
+        self::FIELD_LOCALITATE_COMPANIE,
+        self::FIELD_ADRESA_COMPANIE,
+        self::FIELD_PROCEDURA,
+        self::FIELD_NUME_INSTITUTIE,
+        self::FIELD_CUI_INSTITUTIE,
+        self::FIELD_NUMAR_ANUNT,
+        self::FIELD_DATA_ANUNT,
+        self::FIELD_DESCRIERE_CONTRACT,
+        self::FIELD_TIP_INCHEIERE_CONTRACT,
+        self::FIELD_NUMAR_CONTRACT,
+        self::FIELD_DATA_CONTRACT,
+        self::FIELD_TITLU_CONTRACT,
+        self::FIELD_VALOARE,
+        self::FIELD_MONEDA,
+        self::FIELD_VALOARE_RON,
+        self::FIELD_VALOARE_EUR,
+        self::FIELD_CPV_CODE_ID,
+        self::FIELD_CPV_CODE
     ];
 
     /** @var InstitutionRepository */
@@ -59,6 +85,9 @@ class ContractXlsxV1Strategy implements ImportStrategy
     /** @var CompanyRepository */
     private $companyRepository;
 
+    /** @var ContractRepository  */
+    private $contractRepository;
+
     /**
      * TestStrategy constructor.
      * @param Database $database
@@ -66,17 +95,16 @@ class ContractXlsxV1Strategy implements ImportStrategy
     public function __construct(Database $database)
     {
         $this->database = $database;
-        register_shutdown_function(function () {
-            echo "Found: " . self::$found . " / Not found: " . self::$notFound . "\n";
-        });
 
         $this->institutionRepository = $this->database->getRepository('institution');
         $this->companyRepository = $this->database->getRepository('company');
+        $this->contractRepository = $this->database->getRepository('contract');
     }
 
     /**
      * @param string $fileName
      * @throws IncorrectStrategyException
+     * @throws Exception
      */
     public function processFile(string $fileName)
     {
@@ -87,13 +115,13 @@ class ContractXlsxV1Strategy implements ImportStrategy
 
         $contractIterator = $this->getContractIterator($file);
 
-        $savingBatch = 10;
+        $savingBatch = 4000;
 
         $unsavedContracts = [];
         $index = 0;
-        foreach ($contractIterator as $company)
+        foreach ($contractIterator as $contract)
         {
-            $unsavedContracts[] = $company;
+            $unsavedContracts[] = $contract;
             $index++;
             if ($index == $savingBatch) {
                 $this->saveContracts($unsavedContracts);
@@ -160,6 +188,7 @@ class ContractXlsxV1Strategy implements ImportStrategy
 
     /**
      * @param SplFileObject $file
+     * @param int $batchSize
      * @return Generator|string[]
      * @throws IncorrectStrategyException
      */
@@ -169,7 +198,7 @@ class ContractXlsxV1Strategy implements ImportStrategy
         $this->skipNextRow($file);
         $this->skipNextRow($file);
         $foundColumns = $this->parseRow($file);
-        if ($this->columns !== $foundColumns) {
+        if ($this->expectedColumns !== $foundColumns) {
             throw new IncorrectStrategyException("Strategy expects different column names");
         }
 
@@ -178,7 +207,7 @@ class ContractXlsxV1Strategy implements ImportStrategy
         while (!$file->eof()) {
             $row = $this->parseRow($file);
             if (empty($row)) {continue;}
-            $row = array_combine($this->columns, $row);
+            $row = array_combine($this->expectedColumns, $row);
 
             $batch[] = $row;
             if (count($batch) == $batchSize )
@@ -202,54 +231,91 @@ class ContractXlsxV1Strategy implements ImportStrategy
     {
         $return = [];
         foreach ($batch as $row) {
-            $row['AUTORITATE_CONTRACTANTA'] = html_entity_decode($row['AUTORITATE_CONTRACTANTA']);
-            $row['AUTORITATE_CONTRACTANTA'] = Cleanup::deleteMultipleSpaces($row['AUTORITATE_CONTRACTANTA']);
-            $row['AUTORITATE_CONTRACTANTA'] = Cleanup::replaceWeirdCharacters($row['AUTORITATE_CONTRACTANTA']);
+            $row[self::FIELD_NUME_INSTITUTIE] = html_entity_decode($row[self::FIELD_NUME_INSTITUTIE]);
+            $row[self::FIELD_NUME_INSTITUTIE] = Cleanup::deleteMultipleSpaces($row[self::FIELD_NUME_INSTITUTIE]);
+            $row[self::FIELD_NUME_INSTITUTIE] = Cleanup::replaceWeirdCharacters($row[self::FIELD_NUME_INSTITUTIE]);
 
-            $row['CASTIGATOR'] = html_entity_decode($row['CASTIGATOR']);
-            $row['CASTIGATOR'] = Cleanup::deleteMultipleSpaces($row['CASTIGATOR']);
-            $row['CASTIGATOR'] = Cleanup::replaceWeirdCharacters($row['CASTIGATOR']);
+            $row[self::FIELD_NUME_COMPANIE] = html_entity_decode($row[self::FIELD_NUME_COMPANIE]);
+            $row[self::FIELD_NUME_COMPANIE] = Cleanup::deleteMultipleSpaces($row[self::FIELD_NUME_COMPANIE]);
+            $row[self::FIELD_NUME_COMPANIE] = Cleanup::replaceWeirdCharacters($row[self::FIELD_NUME_COMPANIE]);
 
             try {
-                $row['AUTORITATE_CONTRACTANTA_CUI'] = $this->extractCui($row['AUTORITATE_CONTRACTANTA_CUI']);
-                $row['CASTIGATOR_CUI'] = $this->extractCui($row['CASTIGATOR_CUI']);
+                $row[self::FIELD_CUI_INSTITUTIE] = $this->extractCui($row[self::FIELD_CUI_INSTITUTIE]);
+                $row[self::FIELD_CUI_COMPANIE] = $this->extractCui($row[self::FIELD_CUI_COMPANIE]);
+                $return[] = $row;
             } catch (NotFoundException $exception) {
-                $this->handleFuckedUpCui($row);
+                echo $exception->getMessage() . PHP_EOL;
+                echo print_r($row, true) . PHP_EOL;
+                echo  "Will be ignored\n";
             }
-            $return[] = $row;
         }
         return $return;
     }
 
+    /**
+     * @param $batch
+     * @return Institution[]
+     * @throws Exception
+     */
     private function createInstitutionLookupCache($batch)
     {
-        $institutions = array_column($batch, 'AUTORITATE_CONTRACTANTA_CUI');
-        return $this->institutionRepository->findByCuiBulk($institutions);
+        $institutionCuis = array_column($batch, self::FIELD_CUI_INSTITUTIE);
+        $persisted = $this->institutionRepository->findByCuiBulk($institutionCuis);
+        $unpersisted = [];
+        foreach ($batch as $each) {
+            if (isset($persisted[$each[self::FIELD_CUI_INSTITUTIE]])) {
+                continue;
+            }
+            $institution = new Institution();
+            $institution->setRegNo($each[self::FIELD_CUI_INSTITUTIE]);
+            $institution->setName($each[self::FIELD_NUME_INSTITUTIE]);
+            $unpersisted[$each[self::FIELD_CUI_INSTITUTIE]] = $institution;
+
+        }
+        $this->institutionRepository->bulkInsert($unpersisted);
+
+        return $persisted + $unpersisted;
     }
 
-
+    /**
+     * @param $batch
+     * @return Company[]
+     * @throws Exception
+     */
     private function createCompanyLookupCache($batch)
     {
-        $companies = array_column($batch, 'CASTIGATOR_CUI');
-        return $this->companyRepository->findByCuiBulk($companies);
+        $companies = array_column($batch, self::FIELD_CUI_COMPANIE);
+        $persisted = $this->companyRepository->findByCuiBulk($companies);
+        $unpersisted = [];
+        foreach ($batch as $each) {
+            if (isset($persisted[$each[self::FIELD_CUI_COMPANIE]])) {
+                continue;
+            }
+            $company = new Company();
+            $company->setRegNo($each[self::FIELD_CUI_COMPANIE]);
+            $company->setName($each[self::FIELD_NUME_COMPANIE]);
+            $company->setCountry($each[self::FIELD_TARA_COMPANIE]);
+            $company->setLocality($each[self::FIELD_ADRESA_COMPANIE]);
+            $company->setAddress($each[self::FIELD_LOCALITATE_COMPANIE]);
+
+            $unpersisted[$each[self::FIELD_CUI_COMPANIE]] = $company;
+
+        }
+        $this->companyRepository->bulkInsert($unpersisted);
+
+        return $persisted + $unpersisted;
     }
 
 
     private function extractCui($string)
     {
-        preg_match("#^[^0-9]*([0-9]{1,})#", $string, $matches);
+        preg_match("#^[^1-9]*([0-9]{1,13})#", $string, $matches);
         if (!isset($matches[1])) {
             throw new NotFoundException("Cannot identify CUI in string: '{$string}' ");
         }
         return $matches[1];
     }
 
-    private function handleFuckedUpCui($row)
-    {
-        echo "Incorrect cui format for record: \n";
-        dp($row);
-        echo  "\nWill be ignored";
-    }
 
     /**
      * @param $row
@@ -257,23 +323,23 @@ class ContractXlsxV1Strategy implements ImportStrategy
      * @param $company
      * @return Contract
      */
-    private function createContract($row, $institution, $company): Contract
+    private function createContract($row, Institution $institution, Company $company): Contract
     {
         $contract = new Contract();
-        $contract->setProcedure(strtolower($row['TIP_PROCEDURA']));
-        $contract->setApplicationNo($row['NUMAR_ANUNT']);
-        $contract->setApplicationDate(DateTimeImmutable::createFromFormat("d-m-Y H:i:s", $row['DATA_ANUNT']));
-        $contract->setClosingType(strtolower($row['TIP_INCHEIERE_CONTRACT']));
-        $contract->setContractNo($row['NUMAR_CONTRACT']);
-        $contract->setContractDate(DateTimeImmutable::createFromFormat("d-m-Y H:i:s", $row['DATA_CONTRACT']));
-        $contract->setTitle($row['TITLU_CONTRACT']);
-        $contract->setPrice((float)$row['VALOARE']);
-        $contract->setCurrency($row['MONEDA']);
-        $contract->setPriceEur((float)$row['VALOARE_EUR']);
-        $contract->setPriceRon((float)$row['VALOARE_RON']);
-        $contract->setDescription($row['DESCRIERE']);
+        $contract->setProcedure(strtolower($row[self::FIELD_PROCEDURA]));
+        $contract->setApplicationNo($row[self::FIELD_NUMAR_ANUNT]);
+        $contract->setApplicationDate(DateTimeImmutable::createFromFormat("d-m-Y H:i:s", $row[self::FIELD_DATA_ANUNT]));
+        $contract->setClosingType(strtolower($row[self::FIELD_TIP_INCHEIERE_CONTRACT]));
+        $contract->setContractNo($row[self::FIELD_NUMAR_CONTRACT]);
+        $contract->setContractDate(DateTimeImmutable::createFromFormat("d-m-Y H:i:s", $row[self::FIELD_DATA_CONTRACT]));
+        $contract->setTitle($row[self::FIELD_TITLU_CONTRACT]);
+        $contract->setPrice((float)$row[self::FIELD_VALOARE]);
+        $contract->setCurrency($row[self::FIELD_MONEDA]);
+        $contract->setPriceEur((float)$row[self::FIELD_VALOARE_EUR]);
+        $contract->setPriceRon((float)$row[self::FIELD_VALOARE_RON]);
+        $contract->setDescription($row[self::FIELD_DESCRIERE_CONTRACT]);
 
-        $contract->setCpvcode($row['CPV_CODE']);
+        $contract->setCpvcode($row[self::FIELD_CPV_CODE]);
 
         $contract->setInstitution($institution->getId());
         $contract->setCompany($company->getId());
@@ -285,40 +351,39 @@ class ContractXlsxV1Strategy implements ImportStrategy
      * @param SplFileObject $file
      * @return Generator
      * @throws IncorrectStrategyException
+     * @throws Exception
      */
     private function getContractIterator(SplFileObject $file)
     {
-        $rows = $this->getBatchIterator($file, 5000);
+        $batchSize = 5000;
+
+        echo "Running script in batches of $batchSize\n";
+
+        $rows = $this->getBatchIterator($file, $batchSize);
 
         foreach ($rows as $batchIndex => $batch) {
-
+            echo "#";
             $batch = $this->data_cleanup($batch);
 
             $institutions = $this->createInstitutionLookupCache($batch);
             $companies = $this->createCompanyLookupCache($batch);
 
-            // todo: create missing institutions
-            // todo: create missing companies
-
             foreach ($batch as $rowIndex => $row)
             {
                 try {
-                    if (!isset($institutions[$row['AUTORITATE_CONTRACTANTA_CUI']])) {
-                        throw new InstitutionNotFoundException("Institutia nu a fost gasita: cui=" . $row['AUTORITATE_CONTRACTANTA_CUI'] . " - " . $row['AUTORITATE_CONTRACTANTA']);
+                    if (!isset($institutions[$row[self::FIELD_CUI_INSTITUTIE]])) {
+                        throw new InstitutionNotFoundException("Institution not found: cui=" . $row[self::FIELD_CUI_INSTITUTIE] . " - " . $row[self::FIELD_NUME_INSTITUTIE]);
                     }
-                    if (!isset($companies[$row['CASTIGATOR_CUI']])) {
-                        throw new CompanyNotFoundException("Compania nu a fost gasita: cui=" . $row['CASTIGATOR_CUI'] . " - " . $row['CASTIGATOR']);
+                    if (!isset($companies[$row[self::FIELD_CUI_COMPANIE]])) {
+                        throw new CompanyNotFoundException("Company not found: cui=" . $row[self::FIELD_CUI_COMPANIE] . " - " . $row[self::FIELD_NUME_COMPANIE]);
                     }
-                    $institution = $institutions[$row['AUTORITATE_CONTRACTANTA_CUI']];
-                    $company = $companies[$row['CASTIGATOR_CUI']];
-
-                    static::$found++;
-
+                    $institution = $institutions[$row[self::FIELD_CUI_INSTITUTIE]];
+                    $company = $companies[$row[self::FIELD_CUI_COMPANIE]];
                     yield $this->createContract($row, $institution, $company);
 
                 } catch (NotFoundException $exception) {
-                    echo "Cound not process one row: " . $exception->getMessage() . "\n";
-                    static::$notFound++;
+                    echo "Could not process one row: " . $exception->getMessage() . "\n";
+                    exit;
                 }
 
 
@@ -329,10 +394,11 @@ class ContractXlsxV1Strategy implements ImportStrategy
 
     /**
      * @param Contract[] $unsavedContracts
+     * @throws Exception
      */
     private function saveContracts(array $unsavedContracts)
     {
-        // todo: create batch save function
+        $this->contractRepository->bulkInsert($unsavedContracts);
     }
 
 

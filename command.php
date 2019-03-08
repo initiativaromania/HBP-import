@@ -37,7 +37,7 @@ set_error_handler(function ($errorLevel, $errorString, $errorFile, $errorLine) {
 }, E_ALL);
 
 register_shutdown_function(function () use ($verbosity) {
-    PerformanceLog::run(START_TIME, $verbosity);
+PerformanceLog::run(START_TIME, $verbosity);
 });
 
 $pdo = new PDO("pgsql:host=$host;dbname=$database", $user, $password);
@@ -54,8 +54,6 @@ $strategies->add($testStrategy, "ContractXlsxV1Strategy");
 
 $strategyName = $input->getValue('strategy');
 $strategy = $strategies->getStrategy($strategyName);
-
-
 
 $application = new Application($input, $database);
 $application->run($strategy);

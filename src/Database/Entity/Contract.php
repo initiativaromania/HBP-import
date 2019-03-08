@@ -261,9 +261,9 @@ class Contract
     }
 
     /**
-     * @return int
+     * @return int|null
      */
-    public function getRequests(): int
+    public function getRequests()
     {
         return $this->requests;
     }

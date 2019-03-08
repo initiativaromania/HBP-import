@@ -8,7 +8,7 @@ class Cleanup
 {
     public static function deleteMultipleSpaces($string)
     {
-        return preg_replace("#[ \t\n\r\0\x0B]+#", " ", $string);
+        return preg_replace("#[ \t\n\r\x0B]+#", " ", $string);
     }
 
     public static function replaceWeirdCharacters($string)
