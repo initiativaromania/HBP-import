@@ -24,29 +24,29 @@ use SplFileObject;
 /**
  * Class ContractXlsxV1Strategy was created based on xlsx files from 2018 such as "achizitiidirecte2018t4.xlsx"
  */
-class ContractXlsxV1Strategy implements ImportStrategy
+class ContractCsvV1Strategy implements ImportStrategy
 {
-    const FIELD_NUME_COMPANIE          = "CASTIGATOR";
-    const FIELD_CUI_COMPANIE           = "CASTIGATOR_CUI";
-    const FIELD_TARA_COMPANIE          = "CASTIGATOR_TARA";
-    const FIELD_LOCALITATE_COMPANIE    = "CASTIGATOR_LOCALITATE";
-    const FIELD_ADRESA_COMPANIE        = "CASTIGATOR_ADRESA";
-    const FIELD_PROCEDURA              = "TIP_PROCEDURA";
-    const FIELD_NUME_INSTITUTIE        = "AUTORITATE_CONTRACTANTA";
-    const FIELD_CUI_INSTITUTIE         = "AUTORITATE_CONTRACTANTA_CUI";
-    const FIELD_NUMAR_ANUNT            = "NUMAR_ANUNT";
-    const FIELD_DATA_ANUNT             = "DATA_ANUNT";
-    const FIELD_DESCRIERE_CONTRACT     = "DESCRIERE";
-    const FIELD_TIP_INCHEIERE_CONTRACT = "TIP_INCHEIERE_CONTRACT";
-    const FIELD_NUMAR_CONTRACT         = "NUMAR_CONTRACT";
-    const FIELD_DATA_CONTRACT          = "DATA_CONTRACT";
-    const FIELD_TITLU_CONTRACT         = "TITLU_CONTRACT";
-    const FIELD_VALOARE                = "VALOARE";
-    const FIELD_MONEDA                 = "MONEDA";
-    const FIELD_VALOARE_RON            = "VALOARE_RON";
-    const FIELD_VALOARE_EUR            = "VALOARE_EUR";
-    const FIELD_CPV_CODE_ID            = "CPV_CODE_ID";
-    const FIELD_CPV_CODE               = "CPV_CODE";
+    const FIELD_NUME_COMPANIE          = "Castigator";
+    const FIELD_CUI_COMPANIE           = "CastigatorCUI";
+    const FIELD_TARA_COMPANIE          = "CastigatorTara";
+    const FIELD_LOCALITATE_COMPANIE    = "CastigatorLocalitate";
+    const FIELD_ADRESA_COMPANIE        = "CastigatorAdresa";
+    const FIELD_PROCEDURA              = "TipProcedura";
+    const FIELD_NUME_INSTITUTIE        = "AutoritateContractanta";
+    const FIELD_CUI_INSTITUTIE         = "AutoritateContractantaCUI";
+    const FIELD_NUMAR_ANUNT            = "NumarAnunt";
+    const FIELD_DATA_ANUNT             = "DataAnunt";
+    const FIELD_DESCRIERE_CONTRACT     = "Descriere";
+    const FIELD_TIP_INCHEIERE_CONTRACT = "TipIncheiereContract";
+    const FIELD_NUMAR_CONTRACT         = "NumarContract";
+    const FIELD_DATA_CONTRACT          = "DataContract";
+    const FIELD_TITLU_CONTRACT         = "TitluContract";
+    const FIELD_VALOARE                = "Valoare";
+    const FIELD_MONEDA                 = "Moneda";
+    const FIELD_VALOARE_RON            = "ValoareRON";
+    const FIELD_VALOARE_EUR            = "ValoareEUR";
+    const FIELD_CPV_CODE_ID            = "CPVCodeID";
+    const FIELD_CPV_CODE               = "CPVCode";
 
     /** @var Database */
     private $database;
@@ -108,8 +108,8 @@ class ContractXlsxV1Strategy implements ImportStrategy
      */
     public function processFile(string $fileName)
     {
-        if (substr($fileName, -4) !== "xlsx") {
-            throw new IncorrectStrategyException("Input file not a xlsx file");
+        if (substr($fileName, -3) !== "csv") {
+            throw new IncorrectStrategyException("Input file not a csv file");
         }
         $file = $this->getFileObject($fileName);
 
@@ -142,10 +142,9 @@ class ContractXlsxV1Strategy implements ImportStrategy
     private function getFileObject(string $fileName)
     {
         try {
-            $sheetName = "sheet1";
-            $file = new SplFileObject("zip://" . $fileName . "#xl/worksheets/$sheetName.xml");
+            $file = new SplFileObject($fileName);
         } catch (\Hbp\Import\PhpError $e) {
-            throw new IncorrectStrategyException("Cannot open worksheet \"$sheetName\" from xml file");
+            throw new IncorrectStrategyException("Cannot open file \"$fileName\"");
         }
         return $file;
     }
@@ -181,9 +180,24 @@ class ContractXlsxV1Strategy implements ImportStrategy
      */
     private function parseRow(SplFileObject $file)
     {
-        $tableRow = $file->fgets();
-        preg_match_all("#<c(\ [a-z]+\=\"[a-z0-9]+\")*>(<[a-z0-9]+>)*([^<]*)#i", $tableRow, $matches);
-        return array_map('trim', $matches[3]);
+        $current = $file->ftell();
+        $tableRow = $file->fgetcsv("^");
+        if (count($tableRow) !== 21) {
+            // try again
+            $file->fseek($current);
+
+            $tableRow = $file->fgets();
+            $data = preg_match("#^(.+)\^([0-9]+)\^(.+)\^(.+)\^(.+)\^(Cumparare directa)\^(.+)\^(.+)\^(DA[0-9]+)\^([0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}.[0-9]*)\^(.+)\^(Cumparare directa)\^(DA[0-9]+)\^([0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}.[0-9]*)\^(.+)\^(.+)\^([a-z]{3})\^(.+)\^(.+)\^(.+)\^(.+)$#i", $tableRow, $matches);
+
+
+            if (!$data) {echo $tableRow . "\n\n"; print_r($matches);}
+
+            unset($matches[0]);
+            $tableRow = $matches;
+        }
+
+        //preg_match_all("#<c(\ [a-z]+\=\"[a-z0-9]+\")*>(<[a-z0-9]+>)*([^<]*)#i", $tableRow, $matches);
+        return array_map('trim', $tableRow);
     }
 
     /**
@@ -194,10 +208,12 @@ class ContractXlsxV1Strategy implements ImportStrategy
      */
     public function getBatchIterator(SplFileObject $file, $batchSize = 1000): Generator
     {
-        $this->encoding = $this->parseEncoding($file);
-        $this->skipNextRow($file);
-        $this->skipNextRow($file);
+        // $this->encoding = $this->parseEncoding($file);
+        // $this->skipNextRow($file);
+        // $this->skipNextRow($file);
+
         $foundColumns = $this->parseRow($file);
+        $foundColumns[0] = substr($foundColumns[0], 3); // bom hack
         if ($this->expectedColumns !== $foundColumns) {
             throw new IncorrectStrategyException("Strategy expects different column names");
         }
@@ -207,6 +223,12 @@ class ContractXlsxV1Strategy implements ImportStrategy
         while (!$file->eof()) {
             $row = $this->parseRow($file);
             if (empty($row)) {continue;}
+
+            if (count($row) !== count($this->expectedColumns)) {
+                print_r($row);
+                exit;
+            }
+
             $row = array_combine($this->expectedColumns, $row);
 
             $batch[] = $row;
@@ -214,11 +236,6 @@ class ContractXlsxV1Strategy implements ImportStrategy
             {
                 yield $batch;
                 $batch = [];
-            }
-
-
-            if (!$file->eof()) {
-                $file->fgets();
             }
         }
 
@@ -328,10 +345,10 @@ class ContractXlsxV1Strategy implements ImportStrategy
         $contract = new Contract();
         $contract->setProcedure(strtolower($row[self::FIELD_PROCEDURA]));
         $contract->setApplicationNo($row[self::FIELD_NUMAR_ANUNT]);
-        $contract->setApplicationDate(DateTimeImmutable::createFromFormat("d-m-Y H:i:s", $row[self::FIELD_DATA_ANUNT]));
+        $contract->setApplicationDate(DateTimeImmutable::createFromFormat("Y-m-d H:i:s.u", $row[self::FIELD_DATA_ANUNT]));
         $contract->setClosingType(strtolower($row[self::FIELD_TIP_INCHEIERE_CONTRACT]));
         $contract->setContractNo($row[self::FIELD_NUMAR_CONTRACT]);
-        $contract->setContractDate(DateTimeImmutable::createFromFormat("d-m-Y H:i:s", $row[self::FIELD_DATA_CONTRACT]));
+        $contract->setContractDate(DateTimeImmutable::createFromFormat("Y-m-d H:i:s.u", $row[self::FIELD_DATA_CONTRACT]));
         $contract->setTitle($row[self::FIELD_TITLU_CONTRACT]);
         $contract->setPrice((float)$row[self::FIELD_VALOARE]);
         $contract->setCurrency($row[self::FIELD_MONEDA]);
