@@ -22,7 +22,7 @@ use Hbp\Import\IncorrectStrategyException;
 use SplFileObject;
 
 /**
- * Class ContractXlsxV1Strategy was created based on xlsx files from 2018 such as "achizitiidirecte2018t4.xlsx"
+ * Class ContractCsvV1Strategy was created based on Csv files from 2018
  */
 class ContractCsvV1Strategy implements ImportStrategy
 {
@@ -196,7 +196,6 @@ class ContractCsvV1Strategy implements ImportStrategy
             $tableRow = $matches;
         }
 
-        //preg_match_all("#<c(\ [a-z]+\=\"[a-z0-9]+\")*>(<[a-z0-9]+>)*([^<]*)#i", $tableRow, $matches);
         return array_map('trim', $tableRow);
     }
 
@@ -208,10 +207,6 @@ class ContractCsvV1Strategy implements ImportStrategy
      */
     public function getBatchIterator(SplFileObject $file, $batchSize = 1000): Generator
     {
-        // $this->encoding = $this->parseEncoding($file);
-        // $this->skipNextRow($file);
-        // $this->skipNextRow($file);
-
         $foundColumns = $this->parseRow($file);
         $foundColumns[0] = substr($foundColumns[0], 3); // bom hack
         if ($this->expectedColumns !== $foundColumns) {
