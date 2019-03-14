@@ -16,4 +16,9 @@ class TenderRepository implements RepositoryInterface
     {
         $this->pdo = $pdo;
     }
+
+    public function bulkInsert(array $tenders)
+    {
+        //
+    }
 }

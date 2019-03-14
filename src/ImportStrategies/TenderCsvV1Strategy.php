@@ -189,40 +189,6 @@ class TenderCsvV1Strategy implements ImportStrategy
     {
         $current = $file->ftell();
         $tableRow = $file->fgetcsv("^");
-        if (count($tableRow) !== count($this->expectedColumns)) {
-            // try again
-            $file->fseek($current);
-
-            $tableRow = $file->fgets();
-            $data = preg_match("#^(.+)"
-                . "\^([0-9]+)"
-                . "\^(.+)"
-                . "\^(.+)"
-                . "\^(.+)"
-                . "\^(Cumparare directa)"
-                . "\^(.+)"
-                . "\^(.+)"
-                . "\^(DA[0-9]+)"
-                . "\^([0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}.[0-9]*)"
-                . "\^(.+)"
-                . "\^(Cumparare directa)"
-                . "\^(DA[0-9]+)"
-                . "\^([0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}.[0-9]*)"
-                . "\^(.+)"
-                . "\^(.+)"
-                . "\^([a-z]{3})"
-                . "\^(.+)"
-                . "\^(.+)"
-                . "\^(.+)"
-                . "\^(.+)$#i", $tableRow, $matches);
-
-
-            if (!$data) {echo $tableRow . "\n\n"; print_r($matches);}
-
-            unset($matches[0]);
-            $tableRow = $matches;
-        }
-
         return array_map('trim', $tableRow);
     }
 
@@ -248,7 +214,7 @@ class TenderCsvV1Strategy implements ImportStrategy
 
             if (count($row) !== count($this->expectedColumns)) {
                 print_r($row);
-                exit;
+                continue;
             }
 
             $row = array_combine($this->expectedColumns, $row);
@@ -367,6 +333,9 @@ class TenderCsvV1Strategy implements ImportStrategy
         $tender = new Tender();
 
 
+        print_r($row);
+        exit;
+
         return $tender;
     }
 
@@ -419,6 +388,6 @@ class TenderCsvV1Strategy implements ImportStrategy
      */
     private function saveTenders(array $unsavedTenders)
     {
-        // $this->tenderRepository->bulkInsert($unsavedTenders);
+        $this->tenderRepository->bulkInsert($unsavedTenders);
     }
 }
