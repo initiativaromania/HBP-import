@@ -12,6 +12,7 @@ use Hbp\Import\ExceptionHandler;
 use Hbp\Import\ImportStrategies\ContractCsvV1Strategy;
 use Hbp\Import\ImportStrategies\TenderCsvV1Strategy;
 use Hbp\Import\ImportStrategies\ContractXlsxV1Strategy;
+use Hbp\Import\ImportStrategies\TenderXlsxV1Strategy;
 use Hbp\Import\PerformanceLog;
 use Hbp\Import\StrategyCollection;
 
@@ -55,10 +56,12 @@ $strategies = new StrategyCollection();
 $contractXlsxStrategy = new ContractXlsxV1Strategy($database);
 $contractCsvStrategy = new ContractCsvV1Strategy($database);
 $tenderCsvStrategy = new TenderCsvV1Strategy($database);
+$tenderXlsxStrategy = new TenderXlsxV1Strategy($database);
 
 $strategies->add($contractXlsxStrategy, "ContractXlsxV1Strategy");
 $strategies->add($contractCsvStrategy, "ContractCsvV1Strategy");
 $strategies->add($tenderCsvStrategy, "TenderCsvV1Strategy");
+$strategies->add($tenderXlsxStrategy, "TenderXlsxV1Strategy");
 
 $strategyName = $input->getValue('strategy');
 $strategy = $strategies->getStrategy($strategyName);
