@@ -8,45 +8,6 @@ use DateTimeInterface;
 
 class Tender
 {
-    //protected $castigator;
-    //protected $castigatorCui;
-    //protected $castigatorTara;
-    //protected $castigatorLocalitate;
-    //protected $castigatorAdresa;
-    //protected $tip;
-    //protected $tipContract;
-    //protected $tipProcedura;
-    //protected $autoritateContractanta;
-    //protected $autoritateContractantaCUI;
-    //protected $tipAC;
-    //protected $tipActivitateAC;
-    //protected $numarAnuntAtribuire;
-    //protected $dataAnuntAtribuire;
-    //protected $tipIncheiereContract;
-    //protected $tipCriteriiAtribuire;
-    //protected $cuLicitatieElectronica;
-    //protected $numarOfertePrimite;
-    //protected $subcontractat;
-    //protected $numarContract;
-    //protected $dataContract;
-    //protected $titluContract;
-    //protected $valoare;
-    //protected $moneda;
-    //protected $valoareRON;
-    //protected $valoareEUR;
-    //protected $cPVCodeID;
-    //protected $cPVCode;
-    //protected $numarAnuntParticipare;
-    //protected $dataAnuntParticipare;
-    //protected $valoareEstimataParticipare;
-    //protected $monedaValoareEstimataParticipare;
-    //protected $fonduriComunitare;
-    //protected $tipFinantare;
-    //protected $tipLegislatieID;
-    //protected $fondEuropean;
-    //protected $contractPeriodic;
-    //protected $depoziteGarantii;
-    //protected $modalitatiFinantare;
 
     /** @var int */
     private $id;
@@ -90,64 +51,64 @@ class Tender
     /** @var int */
     private $company;
     /** @var string */
-    protected $type    //character varying(80)   
+    protected $type;    //character varying(80)
          
     /** @var string */
-    protected $contractType   //character varying(20)   
+    protected $contractType;   //character varying(20)
          
     /** @var string */
-    protected $activityType   //character varying(80)   
+    protected $activityType;   //character varying(80)
          
     /** @var string */
-    protected $awardingNo //character(10)   
+    protected $awardingNo; //character(10)
          
     /** @var DateTimeInterface */
-    protected $awardingDate   //timestamp without time zone 
+    protected $awardingDate;   //timestamp without time zone
          
     /** @var string */
-    protected $awardingCriteria   //character varying(50)   
+    protected $awardingCriteria;   //character varying(50)
          
     /** @var boolean */
-    protected $isElectronic   //boolean 
+    protected $isElectronic;   //boolean
          
     /** @var int */
-    protected $bids    //integer 
+    protected $bids;    //integer
          
     /** @var boolean */
-    protected $isSubcontracted    //boolean   
+    protected $isSubcontracted;    //boolean
          
     /** @var int */
-    protected $cpvcodeId  //integer 
+    protected $cpvcodeId;  //integer
          
     /** @var string */
-    protected $bidNo  //character(10)   
+    protected $bidNo;  //character(10)
          
     /** @var DateTimeInterface */
-    protected $bidDate    //date    
+    protected $bidDate;    //date
          
     /** @var float */
-    protected $estimatedBidPrice //numeric(20,2)   
+    protected $estimatedBidPrice; //numeric(20,2)
          
     /** @var string */
-    protected $estimatedBidPriceCurrency    //character(3)    
+    protected $estimatedBidPriceCurrency;    //character(3)
          
     /** @var string */
-    protected $depositsGuarantees //character varying(4000) 
+    protected $depositsGuarantees; //character varying(4000)
          
     /** @var string */
-    protected $financingNotes //character varying(500)  
+    protected $financingNotes; //character varying(500)
           
     /** @var string */
-    protected $institutionType    //character varying(200)  
+    protected $institutionType;    //character varying(200)
          
     /** @var boolean */
-    protected $communityFunds //boolean 
+    protected $communityFunds; //boolean
          
     /** @var string */
-    protected $financingType  //character varying(20)   
+    protected $financingType;  //character varying(20)
          
     /** @var string */
-    protected $euFund //character varying(20)
+    protected $euFund; //character varying(20)
 
     /**
      * @return int
@@ -159,9 +120,9 @@ class Tender
 
     /**
      * @param int $id
-     * @return Contract
+     * @return Tender
      */
-    public function setId(int $id): Contract
+    public function setId(int $id): Tender
     {
         $this->id = $id;
         return $this;
@@ -177,9 +138,9 @@ class Tender
 
     /**
      * @param string $procedure
-     * @return Contract
+     * @return Tender
      */
-    public function setProcedure(string $procedure): Contract
+    public function setProcedure(string $procedure): Tender
     {
         $this->procedure = $procedure;
         return $this;
@@ -195,9 +156,9 @@ class Tender
 
     /**
      * @param string $closingType
-     * @return Contract
+     * @return Tender
      */
-    public function setClosingType(string $closingType): Contract
+    public function setClosingType(string $closingType): Tender
     {
         $this->closingType = $closingType;
         return $this;
@@ -213,9 +174,9 @@ class Tender
 
     /**
      * @param string $contractNo
-     * @return Contract
+     * @return Tender
      */
-    public function setContractNo(string $contractNo): Contract
+    public function setContractNo(string $contractNo): Tender
     {
         $this->contractNo = $contractNo;
         return $this;
@@ -231,9 +192,9 @@ class Tender
 
     /**
      * @param DateTimeInterface $contractDate
-     * @return Contract
+     * @return Tender
      */
-    public function setContractDate(DateTimeInterface $contractDate): Contract
+    public function setContractDate(DateTimeInterface $contractDate): Tender
     {
         $this->contractDate = $contractDate;
         return $this;
@@ -249,9 +210,9 @@ class Tender
 
     /**
      * @param string $title
-     * @return Contract
+     * @return Tender
      */
-    public function setTitle(string $title): Contract
+    public function setTitle(string $title): Tender
     {
         $this->title = $title;
         return $this;
@@ -267,9 +228,9 @@ class Tender
 
     /**
      * @param float $price
-     * @return Contract
+     * @return Tender
      */
-    public function setPrice(float $price): Contract
+    public function setPrice(float $price): Tender
     {
         $this->price = $price;
         return $this;
@@ -285,9 +246,9 @@ class Tender
 
     /**
      * @param string $currency
-     * @return Contract
+     * @return Tender
      */
-    public function setCurrency(string $currency): Contract
+    public function setCurrency(string $currency): Tender
     {
         $this->currency = $currency;
         return $this;
@@ -302,10 +263,10 @@ class Tender
     }
 
     /**
-     * @param string $priceEur
-     * @return Contract
+     * @param float $priceEur
+     * @return Tender
      */
-    public function setPriceEur(float $priceEur): Contract
+    public function setPriceEur(float $priceEur): Tender
     {
         $this->priceEur = $priceEur;
         return $this;
@@ -321,9 +282,9 @@ class Tender
 
     /**
      * @param float $priceRon
-     * @return Contract
+     * @return Tender
      */
-    public function setPriceRon(float $priceRon): Contract
+    public function setPriceRon(float $priceRon): Tender
     {
         $this->priceRon = $priceRon;
         return $this;
@@ -339,9 +300,9 @@ class Tender
 
     /**
      * @param string $cpvcode
-     * @return Contract
+     * @return Tender
      */
-    public function setCpvcode(string $cpvcode): Contract
+    public function setCpvcode(string $cpvcode): Tender
     {
         $this->cpvcode = $cpvcode;
         return $this;
@@ -357,9 +318,9 @@ class Tender
 
     /**
      * @param int $institution
-     * @return Contract
+     * @return Tender
      */
-    public function setInstitution(int $institution): Contract
+    public function setInstitution(int $institution): Tender
     {
         $this->institution = $institution;
         return $this;
@@ -375,9 +336,9 @@ class Tender
 
     /**
      * @param int $requests
-     * @return Contract
+     * @return Tender
      */
-    public function setRequests(int $requests): Contract
+    public function setRequests(int $requests): Tender
     {
         $this->requests = $requests;
         return $this;
@@ -393,9 +354,9 @@ class Tender
 
     /**
      * @param int $company
-     * @return Contract
+     * @return Tender
      */
-    public function setCompany(int $company): Contract
+    public function setCompany(int $company): Tender
     {
         $this->company = $company;
         return $this;
@@ -512,7 +473,7 @@ class Tender
     /**
      * @return boolean
      */
-    public function getIsElectronic(): boolean
+    public function getIsElectronic(): bool
     {
         return $this->isElectronic;
     }
@@ -521,7 +482,7 @@ class Tender
      * @param boolean $isElectronic
      * @return Tender
      */
-    public function setIsElectronic(boolean $isElectronic): Tender
+    public function setIsElectronic(bool $isElectronic): Tender
     {
         $this->isElectronic = $isElectronic;
         return $this;
@@ -548,7 +509,7 @@ class Tender
     /**
      * @return boolean
      */
-    public function getIsSubcontracted(): boolean
+    public function getIsSubcontracted(): bool
     {
         return $this->isSubcontracted;
     }
@@ -557,7 +518,7 @@ class Tender
      * @param boolean $isSubcontracted
      * @return Tender
      */
-    public function setIsSubcontracted(boolean $isSubcontracted): Tender
+    public function setIsSubcontracted(bool $isSubcontracted): Tender
     {
         $this->isSubcontracted = $isSubcontracted;
         return $this;
@@ -710,7 +671,7 @@ class Tender
     /**
      * @return boolean
      */
-    public function getCommunityFunds(): boolean
+    public function getCommunityFunds(): bool
     {
         return $this->communityFunds;
     }
@@ -719,7 +680,7 @@ class Tender
      * @param boolean $communityFunds
      * @return Tender
      */
-    public function setCommunityFunds(boolean $communityFunds): Tender
+    public function setCommunityFunds(bool $communityFunds): Tender
     {
         $this->communityFunds = $communityFunds;
         return $this;
