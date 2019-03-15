@@ -13,25 +13,25 @@ class Tender
     private $id;
 
     /** @var string */
-    private $procedure;
+    private $procedure = "";
 
     /** @var string */
-    private $closingType;
+    private $closingType = "";
 
     /** @var string */
-    private $contractNo;
+    private $contractNo = "";
 
     /** @var DateTimeInterface */
     private $contractDate;
 
     /** @var string */
-    private $title;
+    private $title = "";
 
     /** @var float */
     private $price;
 
     /** @var string */
-    private $currency;
+    private $currency = "";
 
     /** @var float */
     private $priceEur;
@@ -40,7 +40,7 @@ class Tender
     private $priceRon;
 
     /** @var string */
-    private $cpvcode;
+    private $cpvcode = "";
 
     /** @var int */
     private $institution;
@@ -50,23 +50,24 @@ class Tender
 
     /** @var int */
     private $company;
+
     /** @var string */
-    protected $type;    //character varying(80)
+    protected $type = "";    //character varying(80)
          
     /** @var string */
-    protected $contractType;   //character varying(20)
+    protected $contractType = "";   //character varying(20)
          
     /** @var string */
-    protected $activityType;   //character varying(80)
+    protected $activityType = "";   //character varying(80)
          
     /** @var string */
-    protected $awardingNo; //character(10)
+    protected $awardingNo = ""; //character(10)
          
     /** @var DateTimeInterface */
     protected $awardingDate;   //timestamp without time zone
          
     /** @var string */
-    protected $awardingCriteria;   //character varying(50)
+    protected $awardingCriteria = "";   //character varying(50)
          
     /** @var boolean */
     protected $isElectronic;   //boolean
@@ -81,7 +82,7 @@ class Tender
     protected $cpvcodeId;  //integer
          
     /** @var string */
-    protected $bidNo;  //character(10)
+    protected $bidNo = "";  //character(10)
          
     /** @var DateTimeInterface */
     protected $bidDate;    //date
@@ -90,25 +91,25 @@ class Tender
     protected $estimatedBidPrice; //numeric(20,2)
          
     /** @var string */
-    protected $estimatedBidPriceCurrency;    //character(3)
+    protected $estimatedBidPriceCurrency = "";    //character(3)
          
     /** @var string */
-    protected $depositsGuarantees; //character varying(4000)
+    protected $depositsGuarantees = ""; //character varying(4000)
          
     /** @var string */
-    protected $financingNotes; //character varying(500)
+    protected $financingNotes = ""; //character varying(500)
           
     /** @var string */
-    protected $institutionType;    //character varying(200)
+    protected $institutionType = "";    //character varying(200)
          
     /** @var boolean */
     protected $communityFunds; //boolean
          
     /** @var string */
-    protected $financingType;  //character varying(20)
+    protected $financingType = "";  //character varying(20)
          
     /** @var string */
-    protected $euFund; //character varying(20)
+    protected $euFund = ""; //character varying(20)
 
     /**
      * @return int

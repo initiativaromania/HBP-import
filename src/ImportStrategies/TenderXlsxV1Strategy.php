@@ -358,7 +358,6 @@ class TenderXlsxV1Strategy implements ImportStrategy
      */
     private function createTender($row, Institution $institution, Company $company): Tender
     {
-        print_r($row);
         $tender = new Tender();
 
         return $tender;
@@ -413,6 +412,6 @@ class TenderXlsxV1Strategy implements ImportStrategy
      */
     private function saveTenders(array $unsavedTenders)
     {
-        // $this->tenderRepository->bulkInsert($unsavedTenders);
+        $this->tenderRepository->bulkInsert($unsavedTenders);
     }
 }
