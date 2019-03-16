@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hbp\Import\Database\Entity;
 
 use DateTimeInterface;
+use Hbp\Import\Database\Repository\NotFoundException;
 
 class Tender
 {
@@ -27,16 +28,16 @@ class Tender
     /** @var string */
     private $title = "";
 
-    /** @var float */
+    /** @var string */
     private $price;
 
     /** @var string */
     private $currency = "";
 
-    /** @var float */
+    /** @var string */
     private $priceEur;
 
-    /** @var float */
+    /** @var string */
     private $priceRon;
 
     /** @var string */
@@ -87,7 +88,7 @@ class Tender
     /** @var DateTimeInterface */
     protected $bidDate;    //date
          
-    /** @var float */
+    /** @var string */
     protected $estimatedBidPrice; //numeric(20,2)
          
     /** @var string */
@@ -179,6 +180,7 @@ class Tender
      */
     public function setContractNo(string $contractNo): Tender
     {
+        if(strlen($contractNo) > 80) throw new NotFoundException("Dafuck");
         $this->contractNo = $contractNo;
         return $this;
     }
@@ -220,20 +222,20 @@ class Tender
     }
 
     /**
-     * @return float
+     * @return string
      */
-    public function getPrice(): float
+    public function getPrice(): string
     {
         return $this->price;
     }
 
     /**
-     * @param float $price
+     * @param string $price
      * @return Tender
      */
-    public function setPrice(float $price): Tender
+    public function setPrice(string $price): Tender
     {
-        $this->price = $price;
+        $this->price = sprintf("%0.2f", (float)$price);
         return $this;
     }
 
@@ -256,38 +258,38 @@ class Tender
     }
 
     /**
-     * @return float
+     * @return string
      */
-    public function getPriceEur(): float
+    public function getPriceEur(): string
     {
         return $this->priceEur;
     }
 
     /**
-     * @param float $priceEur
+     * @param string $priceEur
      * @return Tender
      */
-    public function setPriceEur(float $priceEur): Tender
+    public function setPriceEur(string $priceEur): Tender
     {
-        $this->priceEur = $priceEur;
+        $this->priceEur = sprintf("%0.2f", (float)$priceEur);
         return $this;
     }
 
     /**
-     * @return float
+     * @return string
      */
-    public function getPriceRon(): float
+    public function getPriceRon(): string
     {
         return $this->priceRon;
     }
 
     /**
-     * @param float $priceRon
+     * @param string $priceRon
      * @return Tender
      */
-    public function setPriceRon(float $priceRon): Tender
+    public function setPriceRon(string $priceRon): Tender
     {
-        $this->priceRon = $priceRon;
+        $this->priceRon = sprintf("%0.2f", (float)$priceRon);
         return $this;
     }
 
@@ -564,7 +566,7 @@ class Tender
      /**
      * @return DateTimeInterface
      */
-    public function getBidDate(): DateTimeInterface
+    public function getBidDate()
     {
         return $this->bidDate;
     }
@@ -580,20 +582,20 @@ class Tender
     }
                
     /**
-     * @return float
+     * @return string
      */
-    public function getEstimatedBidPrice(): float
+    public function getEstimatedBidPrice(): string
     {
         return $this->estimatedBidPrice;
     }
 
     /**
-     * @param float $estimatedBidPrice
+     * @param string $estimatedBidPrice
      * @return Tender
      */
-    public function setEstimatedBidPrice(float $estimatedBidPrice): Tender
+    public function setEstimatedBidPrice(string $estimatedBidPrice): Tender
     {
-        $this->estimatedBidPrice = $estimatedBidPrice;
+        $this->estimatedBidPrice = sprintf("%0.2f", (float)$estimatedBidPrice);
         return $this;
     }  
 
