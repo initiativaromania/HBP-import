@@ -237,6 +237,11 @@ class TenderCsvV1Strategy implements ImportStrategy
     {
         $return = [];
         foreach ($batch as $row) {
+            foreach ($row as $key => $value) {
+                if ($value === "NULL") {
+                    $row[$key] = null;
+                }
+            }
             $row[self::FIELD_NUME_INSTITUTIE] = html_entity_decode($row[self::FIELD_NUME_INSTITUTIE]);
             $row[self::FIELD_NUME_INSTITUTIE] = Cleanup::deleteMultipleSpaces($row[self::FIELD_NUME_INSTITUTIE]);
             $row[self::FIELD_NUME_INSTITUTIE] = Cleanup::replaceWeirdCharacters($row[self::FIELD_NUME_INSTITUTIE]);
@@ -332,40 +337,43 @@ class TenderCsvV1Strategy implements ImportStrategy
     private function createTender($row, Institution $institution, Company $company): Tender
     {
         $tender = new Tender();
-
         $tender->setType($row[self::FIELD_TIP]);
         $tender->setContractType($row[self::FIELD_TIP_CONTRACT]);
         $tender->setProcedure($row[self::FIELD_PROCEDURA]);
-        $tender->setActivityType($row[self::FIELD_TIP_ACTIVITATE_AC]);
+        $tender->setActivityType((string)$row[self::FIELD_TIP_ACTIVITATE_AC]);
         $tender->setAwardingNo($row[self::FIELD_NUMAR_ANUNT]);
-        $tender->setAwardingDate(DateTimeImmutable::createFromFormat("d-m-Y H:i:s", $row[self::FIELD_DATA_ANUNT]));
+        $tender->setAwardingDate(DateTimeImmutable::createFromFormat("Y-m-d H:i:s.u", $row[self::FIELD_DATA_ANUNT]));
         $tender->setClosingType($row[self::FIELD_TIP_INCHEIERE_CONTRACT]);
         $tender->setAwardingCriteria($row[self::FIELD_TIP_CRITERII_ATRIBUIRE]);
         $tender->setIsElectronic($row[self::FIELD_CU_LICITATIE_ELECTRONICA] == 'DA' ? true : false);
         $tender->setBids((int)$row[self::FIELD_NUMAR_OFERTE_PRIMITE]);
         $tender->setIsSubcontracted($row[self::FIELD_SUBCONTRACTAT] == 'DA' ? true : false);
         $tender->setContractNo($row[self::FIELD_NUMAR_CONTRACT]);
-        $tender->setContractDate(DateTimeImmutable::createFromFormat("d-m-Y H:i:s", $row[self::FIELD_DATA_CONTRACT]));
+        $tender->setContractDate(DateTimeImmutable::createFromFormat("Y-m-d H:i:s.u", (string)$row[self::FIELD_DATA_CONTRACT]));
         $tender->setTitle($row[self::FIELD_TITLU_CONTRACT]);
         $tender->setPrice($row[self::FIELD_VALOARE]);
         $tender->setCurrency($row[self::FIELD_MONEDA]);
         $tender->setPriceRon($row[self::FIELD_VALOARE_RON]);
-        $tender->setPriceEur(0);
-        $tender->setCpvcodeId($row[self::FIELD_CPV_CODE_ID]);
+        $tender->setPriceEur("");
+        $tender->setCpvcodeId((int)$row[self::FIELD_CPV_CODE_ID]);
         $tender->setCpvcode($row[self::FIELD_CPV_CODE]);
-        $tender->setBidNo($row[self::FIELD_NUMAR_ANUNT_PARTICIPARE]);
-        $tender->setBidDate(DateTimeImmutable::createFromFormat("d-m-Y H:i:s", $row[self::FIELD_DATA_ANUNT_PARTICIPARE]));
-        $tender->setEstimatedBidPrice($row[self::FIELD_VALOARE_ESTIMATA]);
-        $tender->setEstimatedBidPriceCurrency($row[self::FIELD_MONEDA_VALOARE_ESTIMATA]);
-        $tender->setDepositsGuarantees($row[self::FIELD_DEPOZITE_GARANTII]);
-        $tender->setFinancingNotes($row[self::FIELD_MODALITATI_FINANTARE]);
-        $tender->setFinancingType($row[self::FIELD_TIP_FINANTARE]);
-        $tender->setInstitution($institution->getId());
+        $tender->setBidNo((string)$row[self::FIELD_NUMAR_ANUNT_PARTICIPARE]);
+        $bidDate = DateTimeImmutable::createFromFormat("Y-m-d H:i:s.u", (string)$row[self::FIELD_DATA_ANUNT_PARTICIPARE]);
+        if ($bidDate) {
+            $tender->setBidDate($bidDate);
+        }
+
+        $tender->setEstimatedBidPrice((string)$row[self::FIELD_VALOARE_ESTIMATA]);
+        $tender->setEstimatedBidPriceCurrency((string)$row[self::FIELD_MONEDA_VALOARE_ESTIMATA]);
+        $tender->setDepositsGuarantees((string)$row[self::FIELD_DEPOZITE_GARANTII]);
+        $tender->setFinancingNotes((string)$row[self::FIELD_MODALITATI_FINANTARE]);
+        $tender->setFinancingType((string)$row[self::FIELD_TIP_FINANTARE]);
+        $tender->setInstitution((int)$institution->getId());
         $tender->setRequests(0);
-        $tender->setCompany($company->getId());
-        $tender->setInstitutionType($row[self::FIELD_TIP_AC]);
+        $tender->setCompany((int)$company->getId());
+        $tender->setInstitutionType((string)$row[self::FIELD_TIP_AC]);
         $tender->setCommunityFunds($row[self::FIELD_FONDURI_COMUNITARE] == 'DA' ? true : false);
-        $tender->setEuFund($row[self::FIELD_FOND_EUROPEAN]);
+        $tender->setEuFund((string)$row[self::FIELD_FOND_EUROPEAN]);
 
         return $tender;
     }

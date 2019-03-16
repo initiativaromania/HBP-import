@@ -54,7 +54,9 @@ class TenderRepository implements RepositoryInterface
             $parameters[$key]["cpvcode_id"] = $tender->getCpvcodeId();
             $parameters[$key]["cpvcode"] = $tender->getCpvcode();
             $parameters[$key]["bid_no"] = $tender->getBidNo();
-            $parameters[$key]["bid_date"] = $tender->getBidDate()->format("Y-m-d");
+            $bidDate = $tender->getBidDate();
+            $parameters[$key]["bid_date"] = $bidDate ? $bidDate->format("Y-m-d") : null;
+
             $parameters[$key]["estimated_bid_price"] = $tender->getEstimatedBidPrice();
             $parameters[$key]["estimated_bid_price_currency"] = $tender->getEstimatedBidPriceCurrency();
             $parameters[$key]["deposits_guarantees"] = $tender->getDepositsGuarantees();
@@ -63,7 +65,7 @@ class TenderRepository implements RepositoryInterface
             $parameters[$key]["requests"] = $tender->getRequests();
             $parameters[$key]["company"] = $tender->getCompany();
             $parameters[$key]["institution_type"] = $tender->getInstitutionType();
-            $parameters[$key]["community_funds"] = $tender->getCommunityFunds();
+            $parameters[$key]["community_funds"] = (bool)$tender->getCommunityFunds();
             $parameters[$key]["financing_type"] = $tender->getFinancingType();
             $parameters[$key]["eu_fund"] = $tender->getEuFund();
 
@@ -84,16 +86,24 @@ class TenderRepository implements RepositoryInterface
 
         foreach ($parameters as $parameterKey => $parameterFields) {
             foreach ($parameterFields as $parameterName => $parameterValue) {
-                $statement->bindValue($parameterName . "_" . $parameterKey , $parameterValue);
+                if (is_bool($parameterValue)) {
+                    $statement->bindValue($parameterName . "_" . $parameterKey , $parameterValue, PDO::PARAM_BOOL);
+                }
+                else if ( is_int($parameterValue)){
+                    $statement->bindValue($parameterName . "_" . $parameterKey , $parameterValue, PDO::PARAM_INT);
+
+                }
+                else {
+                    $statement->bindValue($parameterName . "_" . $parameterKey , $parameterValue);
+                }
             }
         }
 
         $return = $statement->execute();
 
         if (!$return) {
-            throw new Exception($statement->errorCode() . " " . $statement->errorInfo()[2] . "\n$query\n");
+            throw new Exception($statement->errorCode() . " " . $statement->errorInfo()[2] . "\n");
         }
 
-        exit;
     }
 }
