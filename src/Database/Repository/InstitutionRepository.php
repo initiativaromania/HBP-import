@@ -69,7 +69,7 @@ class InstitutionRepository implements RepositoryInterface
         $return = $statement->execute();
 
         if (!$return) {
-            throw new Exception($statement->errorInfo()[2] . " " . print_r($institutions, true));
+            throw new Exception($statement->errorInfo()[2] . " on institution insert");
         }
 
         $data = $statement->fetchAll(PDO::FETCH_ASSOC);

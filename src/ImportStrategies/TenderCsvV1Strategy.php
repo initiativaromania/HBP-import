@@ -332,13 +332,12 @@ class TenderCsvV1Strategy implements ImportStrategy
     private function createTender($row, Institution $institution, Company $company): Tender
     {
         $tender = new Tender();
-
         $tender->setType($row[self::FIELD_TIP]);
         $tender->setContractType($row[self::FIELD_TIP_CONTRACT]);
         $tender->setProcedure($row[self::FIELD_PROCEDURA]);
         $tender->setActivityType($row[self::FIELD_TIP_ACTIVITATE_AC]);
         $tender->setAwardingNo($row[self::FIELD_NUMAR_ANUNT]);
-        $tender->setAwardingDate(DateTimeImmutable::createFromFormat("d-m-Y H:i:s", $row[self::FIELD_DATA_ANUNT]));
+        $tender->setAwardingDate(DateTimeImmutable::createFromFormat("d-m-Y H:i:s.u", $row[self::FIELD_DATA_ANUNT]));
         $tender->setClosingType($row[self::FIELD_TIP_INCHEIERE_CONTRACT]);
         $tender->setAwardingCriteria($row[self::FIELD_TIP_CRITERII_ATRIBUIRE]);
         $tender->setIsElectronic($row[self::FIELD_CU_LICITATIE_ELECTRONICA] == 'DA' ? true : false);

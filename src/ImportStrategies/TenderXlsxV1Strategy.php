@@ -440,7 +440,6 @@ class TenderXlsxV1Strategy implements ImportStrategy
         }
     }
 
-
     /**
      * @param Tender[] $unsavedTenders
      * @throws Exception
