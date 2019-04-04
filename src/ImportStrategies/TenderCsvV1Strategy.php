@@ -338,7 +338,7 @@ class TenderCsvV1Strategy implements ImportStrategy
     {
         $tender = new Tender();
         $tender->setType($row[self::FIELD_TIP]);
-        $tender->setContractType($row[self::FIELD_TIP_CONTRACT]);
+        $tender->setContractType((string)$row[self::FIELD_TIP_CONTRACT]);
         $tender->setProcedure($row[self::FIELD_PROCEDURA]);
         $tender->setActivityType((string)$row[self::FIELD_TIP_ACTIVITATE_AC]);
         $tender->setAwardingNo($row[self::FIELD_NUMAR_ANUNT]);

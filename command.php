@@ -43,7 +43,7 @@ register_shutdown_function(function () use ($verbosity) {
 PerformanceLog::run(START_TIME, $verbosity);
 });
 
-$pdo = new PDO("pgsql:host=$host;dbname=$database", $user, $password);
+$pdo = new PDO("pgsql:host=$host;dbname=$database;port=$port", $user, $password);
 
 $database = new Database($pdo);
 $database->registerRepository('contract', new ContractRepository($pdo));
